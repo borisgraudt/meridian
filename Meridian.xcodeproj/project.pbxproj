@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A11BE82E2F5E99EE00F4A5E7 /* ElysiumCore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A11BE82D2F5E99EE00F4A5E7 /* ElysiumCore.xcframework */; };
+		A11BE82F2F5E99EE00F4A5E7 /* ElysiumCore.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = A11BE82D2F5E99EE00F4A5E7 /* ElysiumCore.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		A11BE8332F5E9B4700F4A5E7 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = A11BE8322F5E9B4700F4A5E7 /* GRDB */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		A11BE7C62F5E949D00F4A5E7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -23,10 +29,25 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		A11BE8302F5E99EE00F4A5E7 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				A11BE82F2F5E99EE00F4A5E7 /* ElysiumCore.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		A11BE7B82F5E949D00F4A5E7 /* Meridian.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Meridian.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A11BE7C52F5E949D00F4A5E7 /* MeridianTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeridianTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A11BE7CF2F5E949D00F4A5E7 /* MeridianUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeridianUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A11BE82D2F5E99EE00F4A5E7 /* ElysiumCore.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = ElysiumCore.xcframework; path = ../Touch/ElysiumCore.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -45,6 +66,26 @@
 			path = MeridianUITests;
 			sourceTree = "<group>";
 		};
+		A11BE7E62F5E968800F4A5E7 /* Core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		A11BE7F62F5E974A00F4A5E7 /* Models */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A11BE8092F5E980600F4A5E7 /* Resources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A11BE80E2F5E985B00F4A5E7 /* UI */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = UI;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,6 +93,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A11BE82E2F5E99EE00F4A5E7 /* ElysiumCore.xcframework in Frameworks */,
+				A11BE8332F5E9B4700F4A5E7 /* GRDB in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -76,8 +119,13 @@
 			isa = PBXGroup;
 			children = (
 				A11BE7BA2F5E949D00F4A5E7 /* Meridian */,
+				A11BE7E62F5E968800F4A5E7 /* Core */,
+				A11BE7F62F5E974A00F4A5E7 /* Models */,
+				A11BE8092F5E980600F4A5E7 /* Resources */,
+				A11BE80E2F5E985B00F4A5E7 /* UI */,
 				A11BE7C82F5E949D00F4A5E7 /* MeridianTests */,
 				A11BE7D22F5E949D00F4A5E7 /* MeridianUITests */,
+				A11BE82C2F5E99EE00F4A5E7 /* Frameworks */,
 				A11BE7B92F5E949D00F4A5E7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -92,6 +140,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		A11BE82C2F5E99EE00F4A5E7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A11BE82D2F5E99EE00F4A5E7 /* ElysiumCore.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -102,6 +158,7 @@
 				A11BE7B42F5E949D00F4A5E7 /* Sources */,
 				A11BE7B52F5E949D00F4A5E7 /* Frameworks */,
 				A11BE7B62F5E949D00F4A5E7 /* Resources */,
+				A11BE8302F5E99EE00F4A5E7 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -109,9 +166,14 @@
 			);
 			fileSystemSynchronizedGroups = (
 				A11BE7BA2F5E949D00F4A5E7 /* Meridian */,
+				A11BE7E62F5E968800F4A5E7 /* Core */,
+				A11BE7F62F5E974A00F4A5E7 /* Models */,
+				A11BE8092F5E980600F4A5E7 /* Resources */,
+				A11BE80E2F5E985B00F4A5E7 /* UI */,
 			);
 			name = Meridian;
 			packageProductDependencies = (
+				A11BE8322F5E9B4700F4A5E7 /* GRDB */,
 			);
 			productName = Meridian;
 			productReference = A11BE7B82F5E949D00F4A5E7 /* Meridian.app */;
@@ -195,6 +257,9 @@
 			);
 			mainGroup = A11BE7AF2F5E949D00F4A5E7;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A11BE8312F5E9B4700F4A5E7 /* XCRemoteSwiftPackageReference "GRDB" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A11BE7B92F5E949D00F4A5E7 /* Products */;
 			projectDirPath = "";
@@ -400,6 +465,7 @@
 				DEVELOPMENT_TEAM = H237LXJ3U6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Meridian/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -416,6 +482,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				"SWIFT_OBJC_BRIDGING_HEADER[arch=*]" = "elysium-ffi/elysium.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -432,6 +499,7 @@
 				DEVELOPMENT_TEAM = H237LXJ3U6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Meridian/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -448,6 +516,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				"SWIFT_OBJC_BRIDGING_HEADER[arch=*]" = "elysium-ffi/elysium.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -578,6 +647,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		A11BE8312F5E9B4700F4A5E7 /* XCRemoteSwiftPackageReference "GRDB" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A11BE8322F5E9B4700F4A5E7 /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A11BE8312F5E9B4700F4A5E7 /* XCRemoteSwiftPackageReference "GRDB" */;
+			productName = GRDB;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A11BE7B02F5E949D00F4A5E7 /* Project object */;
 }

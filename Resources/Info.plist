@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+
+  <!-- Required: Bundle identity -->
+  <key>CFBundleIdentifier</key>
+  <string>com.borisgraudt.elysium</string>
+  <key>CFBundleName</key>
+  <string>Elysium Messenger</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0.0</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>LSRequiresIPhoneOS</key>
+  <true/>
+  <key>UILaunchScreen</key>
+  <dict/>
+
+  <!-- Background modes: VoIP keeps the P2P socket alive; fetch = fallback poll -->
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>voip</string>
+    <string>fetch</string>
+  </array>
+
+  <!-- Bonjour for local LAN peer discovery (mDNS _elysium._tcp) -->
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Elysium uses your local network to discover nearby peers for faster, offline-capable messaging.</string>
+  <key>NSBonjourServices</key>
+  <array>
+    <string>_elysium._tcp</string>
+  </array>
+
+  <!-- Camera permission for QR code scanning -->
+  <key>NSCameraUsageDescription</key>
+  <string>Scan a contact's QR code to add them.</string>
+
+  <!-- Arbitrary network loads needed for bootstrap peers and censorship-resistance proxies -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+  </dict>
+
+  <!-- Supported orientations -->
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
+
+  <!-- Background task identifiers -->
+  <key>BGTaskSchedulerPermittedIdentifiers</key>
+  <array>
+    <string>com.borisgraudt.elysium.inbox-poll</string>
+  </array>
+
+</dict>
+</plist>
