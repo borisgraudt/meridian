@@ -162,11 +162,15 @@ struct OnboardingView: View {
 
     private func generateIdentity() async {
         isGenerating = true
-        await ElysiumBridge.shared.start()
+        let docsDir = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)[0].path
+        await ElysiumBridge.shared.start(configJSON: "{\"data_dir\":\"\(docsDir)\"}")
         // Give the node a moment to initialise.
         try? await Task.sleep(nanoseconds: 1_000_000_000)
         nodeId = await ElysiumBridge.shared.nodeId ?? ""
-        publicKeyBase64 = await ElysiumBridge.shared.publicKeyBase64 ?? ""
+        // Use the CryptoKit key for E2E encryption — Elysium's own key is for transport only.
+        publicKeyBase64 = (try? CryptoManager.shared.publicKeyBase64) ?? ""
+        print("[Onboarding] nodeId=\(nodeId.prefix(24))... pubKey=\(publicKeyBase64.prefix(20))...")
         isGenerating = false
         step = .name
     }
@@ -206,12 +210,14 @@ struct QRCodeView: View {
     }
 
     private func generateQR() -> UIImage? {
-        guard let data = content.data(using: .utf8),
+        guard !content.isEmpty,
+              let data = content.data(using: .utf8),
               let filter = CIFilter(name: "CIQRCodeGenerator") else { return nil }
         filter.setValue(data, forKey: "inputMessage")
         filter.setValue("M", forKey: "inputCorrectionLevel")
         guard let output = filter.outputImage else { return nil }
         let scaled = output.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
-        return UIImage(ciImage: scaled)
+        guard let cgImage = CIContext().createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 }

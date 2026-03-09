@@ -30,14 +30,23 @@ final class MessageStore: ObservableObject {
     /// Encrypt `text` for the peer, persist optimistically, hand off to the transport.
     @discardableResult
     func sendMessage(conversationId: String, peerNodeId: String, text: String) async -> Message? {
-        guard let conv = try? DatabaseManager.shared.conversation(id: conversationId),
-              let myNodeId = await ElysiumBridge.shared.nodeId else { return nil }
+        print("[MessageStore] sendMessage — to=\(peerNodeId.prefix(16))... convId=\(conversationId.prefix(16))...")
+        guard let conv = try? DatabaseManager.shared.conversation(id: conversationId) else {
+            print("[MessageStore] sendMessage — ❌ conversation not found: \(conversationId)")
+            return nil
+        }
+        guard let myNodeId = await ElysiumBridge.shared.nodeId else {
+            print("[MessageStore] sendMessage — ❌ nodeId is nil (node not started?)")
+            return nil
+        }
+        print("[MessageStore] sendMessage — myNodeId=\(myNodeId.prefix(16))... peerPubKey=\(conv.peerPublicKey.isEmpty ? "<empty!>" : conv.peerPublicKey.prefix(20) + "...")")
 
         let encryptedData: Data
         do {
             encryptedData = try CryptoManager.shared.encrypt(text, recipientPublicKeyBase64: conv.peerPublicKey)
+            print("[MessageStore] sendMessage — ✅ encrypted \(encryptedData.count) bytes")
         } catch {
-            print("[MessageStore] Encryption failed: \(error)")
+            print("[MessageStore] sendMessage — ❌ encryption failed: \(error)")
             return nil
         }
 
@@ -54,7 +63,7 @@ final class MessageStore: ObservableObject {
         )
 
         try? DatabaseManager.shared.insertMessage(msg)
-        appendToCache(msg)
+        await appendToCache(msg)
 
         // Retry up to 5 times with 600 ms intervals.
         var success = false
@@ -66,7 +75,7 @@ final class MessageStore: ObservableObject {
 
         msg.deliveryStatus = success ? .sent : .failed
         try? DatabaseManager.shared.updateDeliveryStatus(msgId: msg.msgId, status: msg.deliveryStatus)
-        updateCacheStatus(msgId: msg.msgId, conversationId: conversationId, status: msg.deliveryStatus)
+        await updateCacheStatus(msgId: msg.msgId, conversationId: conversationId, status: msg.deliveryStatus)
 
         // Update conversation preview.
         if var c = try? DatabaseManager.shared.conversation(id: conversationId) {
@@ -101,6 +110,7 @@ final class MessageStore: ObservableObject {
         // Update connectivity stats.
         let count = await ElysiumBridge.shared.peerCount
         let connected = await ElysiumBridge.shared.isConnected
+        print("[MessageStore] poll — peers=\(count) connected=\(connected)")
         await MainActor.run {
             peerCount = count
             isConnected = connected
@@ -111,6 +121,7 @@ final class MessageStore: ObservableObject {
         guard !inbound.isEmpty else { return }
 
         let myNodeId = await ElysiumBridge.shared.nodeId ?? ""
+        print("[MessageStore] poll — processing \(inbound.count) inbound message(s), myNodeId=\(myNodeId.prefix(16))...")
 
         for wire in inbound {
             await handleInbound(wire, myNodeId: myNodeId)
@@ -119,25 +130,35 @@ final class MessageStore: ObservableObject {
 
     private func handleInbound(_ wire: InboundWireMessage, myNodeId: String) async {
         let convId = Conversation.makeId(myNodeId: myNodeId, peerNodeId: wire.from)
+        print("[MessageStore] handleInbound — msgId=\(wire.msgId.prefix(8)) from=\(wire.from.prefix(16))... convId=\(convId.prefix(16))...")
 
         // Resolve sender public key for decryption.
         let senderPublicKey: String
         if let contact = try? DatabaseManager.shared.contact(nodeId: wire.from) {
             senderPublicKey = contact.publicKey
+            print("[MessageStore] handleInbound — sender known: \(contact.displayName), pubKey=\(senderPublicKey.isEmpty ? "<empty!>" : "ok")")
         } else {
-            // Unknown sender — queue message with no decryption.
             senderPublicKey = ""
+            print("[MessageStore] handleInbound — ⚠️ unknown sender \(wire.from.prefix(16))..., message will not be decrypted")
         }
 
         let encryptedData = Data(base64Encoded: wire.payloadEncrypted) ?? Data()
 
         var decrypted: String? = nil
         if !senderPublicKey.isEmpty {
-            decrypted = try? CryptoManager.shared.decrypt(encryptedData, senderPublicKeyBase64: senderPublicKey)
+            do {
+                decrypted = try CryptoManager.shared.decrypt(encryptedData, senderPublicKeyBase64: senderPublicKey)
+                print("[MessageStore] handleInbound — ✅ decrypted: \"\(decrypted?.prefix(80) ?? "")\"")
+            } catch {
+                print("[MessageStore] handleInbound — ❌ decryption failed: \(error)")
+            }
         }
 
         // Duplicate guard.
-        guard !(messages[convId]?.contains(where: { $0.msgId == wire.msgId }) ?? false) else { return }
+        guard !(messages[convId]?.contains(where: { $0.msgId == wire.msgId }) ?? false) else {
+            print("[MessageStore] handleInbound — duplicate, skipping \(wire.msgId.prefix(8))")
+            return
+        }
 
         let msg = Message(
             msgId: wire.msgId,
@@ -156,7 +177,7 @@ final class MessageStore: ObservableObject {
             try? DatabaseManager.shared.cacheDecryptedBody(msgId: msg.msgId, plaintext: plaintext)
         }
 
-        appendToCache(msg)
+        await appendToCache(msg)
 
         // Upsert conversation.
         var conv: Conversation
@@ -184,19 +205,30 @@ final class MessageStore: ObservableObject {
 
     func markRead(conversationId: String) {
         try? DatabaseManager.shared.markAllRead(conversationId: conversationId)
-        if let idx = conversations.firstIndex(where: { $0.conversationId == conversationId }) {
-            conversations[idx].unreadCount = 0
+        DispatchQueue.main.async {
+            if let idx = self.conversations.firstIndex(where: { $0.conversationId == conversationId }) {
+                self.conversations[idx].unreadCount = 0
+            }
         }
     }
 
     // MARK: - Helpers
 
     private func loadFromDatabase() {
-        conversations = (try? DatabaseManager.shared.allConversations()) ?? []
+        let convs = (try? DatabaseManager.shared.allConversations()) ?? []
+        DispatchQueue.main.async { self.conversations = convs }
     }
 
     private func refreshConversations() {
         conversations = (try? DatabaseManager.shared.allConversations()) ?? []
+    }
+
+    @MainActor
+    func deleteMessageFromCache(msgId: String, conversationId: String) {
+        guard var list = messages[conversationId],
+              let idx = list.firstIndex(where: { $0.msgId == msgId }) else { return }
+        list.remove(at: idx)
+        messages[conversationId] = list
     }
 
     @MainActor

@@ -33,22 +33,31 @@ actor ElysiumBridge {
 
     /// Start the embedded Elysium node.  Call once on app launch.
     func start(port: UInt16 = 0, configJSON: String = "{}") {
-        guard handle == nil else { return }
+        guard handle == nil else {
+            print("[ElysiumBridge] start() called but node already running, id=\(nodeId ?? "?")")
+            return
+        }
+        print("[ElysiumBridge] calling elysium_start(port:\(port), config:\(configJSON))")
         handle = configJSON.withCString { cfg in
             elysium_start(port, cfg)
         }
         guard handle != nil else {
-            print("[ElysiumBridge] elysium_start returned nil — check config")
+            print("[ElysiumBridge] ❌ elysium_start returned nil — node failed to start")
             return
         }
-        print("[ElysiumBridge] node started, id=\(nodeId ?? "?")")
+        print("[ElysiumBridge] ✅ node started — id=\(nodeId ?? "<nil>")  pubkey=\(publicKeyBase64 ?? "<nil>")")
     }
 
     /// Stop the node.  Called when the app terminates.
     func stop() {
-        guard let h = handle else { return }
+        guard let h = handle else {
+            print("[ElysiumBridge] stop() called but node not running")
+            return
+        }
+        print("[ElysiumBridge] stopping node...")
         elysium_stop(h)
         handle = nil
+        print("[ElysiumBridge] node stopped")
     }
 
     // MARK: Identity
@@ -67,35 +76,47 @@ actor ElysiumBridge {
 
     /// Encrypt `plaintext` for `recipient` and hand it to the Elysium transport layer.
     func sendMessage(to recipientNodeId: String, encryptedPayload: Data) async -> Bool {
-        guard let h = handle else { return false }
-        return encryptedPayload.withUnsafeBytes { raw in
+        guard let h = handle else {
+            print("[ElysiumBridge] ❌ sendMessage — node not running")
+            return false
+        }
+        print("[ElysiumBridge] → sendMessage to=\(recipientNodeId.prefix(16))... bytes=\(encryptedPayload.count)")
+        let result = encryptedPayload.withUnsafeBytes { raw in
             guard let ptr = raw.bindMemory(to: UInt8.self).baseAddress else { return false }
             return recipientNodeId.withCString { rid in
-                elysium_send_message(h, rid, ptr, encryptedPayload.count)
+                elysium_send_message(h, rid, ptr, UInt(encryptedPayload.count))
             }
         }
+        print("[ElysiumBridge] → sendMessage result=\(result ? "✅ ok" : "❌ failed")")
+        return result
     }
 
     /// Drain the node's inbox and return all pending messages.
     func pollInbox() -> [InboundWireMessage] {
-        guard let h = handle else { return [] }
+        guard let h = handle else {
+            print("[ElysiumBridge] pollInbox — node not running, skipping")
+            return []
+        }
 
-        // We use a file-scope C function as the callback so we can bridge
-        // it into the actor's storage via a global queue.
+        var rawCount = 0
         elysium_poll_inbox(h, { jsonPtr in
             guard let jsonPtr else { return }
             let json = String(cString: jsonPtr)
+            print("[ElysiumBridge] ← raw inbox message: \(json.prefix(200))")
             if let data = json.data(using: .utf8),
                let msg = try? JSONDecoder().decode(InboundWireMessage.self, from: data) {
                 ElysiumBridge._callbackQueue.async {
                     ElysiumBridge._pendingCallbackMessages.append(msg)
                 }
+            } else {
+                print("[ElysiumBridge] ← ❌ failed to decode inbox JSON: \(json.prefix(200))")
             }
         })
 
-        // Spin briefly to let the callback queue flush (callbacks are synchronous
-        // but dispatched onto another queue to avoid re-entrancy).
         let messages = ElysiumBridge.drainCallbackMessages()
+        if !messages.isEmpty {
+            print("[ElysiumBridge] ← drained \(messages.count) message(s) from inbox")
+        }
         return messages
     }
 

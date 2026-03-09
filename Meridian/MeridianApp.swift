@@ -39,23 +39,52 @@ final class AppDelegate: NSObject, UIApplicationDelegate, PKPushRegistryDelegate
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
     ) -> Bool {
         // 1. Set up SQLite.
+        print("[App] ── launch ──────────────────────────")
         do {
             try DatabaseManager.shared.setup()
+            print("[App] ✅ database ready")
         } catch {
-            print("[App] Database setup failed: \(error)")
+            print("[App] ❌ database setup failed: \(error)")
         }
 
         // 2. Initialise crypto identity (creates or loads keys from Keychain).
-        _ = try? CryptoManager.shared.loadOrCreatePrivateKey()
+        do {
+            _ = try CryptoManager.shared.loadOrCreatePrivateKey()
+            let pubKey = (try? CryptoManager.shared.publicKeyBase64) ?? "<error>"
+            print("[App] ✅ crypto identity ready — pubKey=\(pubKey.prefix(20))...")
+        } catch {
+            print("[App] ❌ crypto identity failed: \(error)")
+        }
 
         // 3. Start embedded Elysium node.
+        print("[App] starting Elysium node...")
         Task {
-            await ElysiumBridge.shared.start()
+            let docsDir = FileManager.default
+                .urls(for: .documentDirectory, in: .userDomainMask)[0].path
+
+            var configDict: [String: Any] = ["data_dir": docsDir]
+            let peersString = UserDefaults.standard.string(forKey: "bootstrapPeers") ?? ""
+            let peersArray = peersString
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            if !peersArray.isEmpty {
+                configDict["bootstrap_peers"] = peersArray
+            }
+            let config = (try? JSONSerialization.data(withJSONObject: configDict))
+                .flatMap { String(data: $0, encoding: .utf8) }
+                ?? "{\"data_dir\":\"\(docsDir)\"}"
+
+            let storedPort = UserDefaults.standard.integer(forKey: "listenPort")
+            let listenPort = UInt16(storedPort > 0 ? storedPort : 0)
+            print("[App] elysium config: \(config), port: \(listenPort)")
+            await ElysiumBridge.shared.start(port: listenPort, configJSON: config)
         }
 
         // 4. Start message store (polling loop).
         MessageStore.shared.start()
         ContactsManager.shared.loadAll()
+        print("[App] ✅ MessageStore + ContactsManager started")
 
         // 5. Register for VoIP push so iOS keeps our socket alive in background.
         voipRegistry = PKPushRegistry(queue: .main)
@@ -68,9 +97,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate, PKPushRegistryDelegate
             using: nil
         ) { task in
             Task {
-                await MessageStore.shared.sendMessage(
-                    conversationId: "", peerNodeId: "", text: ""
-                )
+                let _ = await ElysiumBridge.shared.pollInbox()
                 task.setTaskCompleted(success: true)
             }
         }

@@ -31,6 +31,12 @@ struct SettingsView: View {
                         }
                     }
 
+                    NavigationLink {
+                        BootstrapPeersView()
+                    } label: {
+                        Label("Bootstrap Peers", systemImage: "antenna.radiowaves.left.and.right")
+                    }
+
                     Toggle(isOn: $onionModeEnabled) {
                         Label("Onion Routing (3 hops)", systemImage: "eyes.inverse")
                     }

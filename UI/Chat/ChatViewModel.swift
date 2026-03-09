@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 @MainActor
 final class ChatViewModel: ObservableObject {
@@ -55,11 +56,7 @@ final class ChatViewModel: ObservableObject {
 
     func delete(_ message: Message) {
         // Optimistic removal from cache; SQLite row remains for audit.
-        if var list = store.messages[conversation.conversationId],
-           let idx = list.firstIndex(where: { $0.msgId == message.msgId }) {
-            list.remove(at: idx)
-            store.messages[conversation.conversationId] = list
-        }
+        store.deleteMessageFromCache(msgId: message.msgId, conversationId: conversation.conversationId)
     }
 
     // MARK: - Relative time

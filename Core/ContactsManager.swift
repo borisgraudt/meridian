@@ -1,4 +1,6 @@
 import Foundation
+import Combine
+
 final class ContactsManager: ObservableObject {
     static let shared = ContactsManager()
 

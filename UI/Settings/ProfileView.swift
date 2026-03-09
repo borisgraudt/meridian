@@ -82,7 +82,8 @@ struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             nodeId = await ElysiumBridge.shared.nodeId ?? ""
-            publicKey = await ElysiumBridge.shared.publicKeyBase64 ?? ""
+            // Use the CryptoKit key for E2E encryption — Elysium's own key is for transport only.
+            publicKey = (try? CryptoManager.shared.publicKeyBase64) ?? ""
         }
     }
 

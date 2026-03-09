@@ -81,7 +81,7 @@ struct AddContactView: View {
             if let status = statusMessage {
                 Section {
                     Text(status)
-                        .foregroundStyle(isAdding ? .secondary : .red)
+                        .foregroundStyle(isAdding ? AnyShapeStyle(.secondary) : AnyShapeStyle(Color.red))
                 }
             }
 
